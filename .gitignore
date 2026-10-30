@@ -1,0 +1,17 @@
+# Environment and secrets
+.venv/
+.env
+
+# Competition data must not be shared (rules 2.4b), so nothing under data/ is committed
+data/
+
+# Generated outputs (large; rebuilt by the notebooks)
+preds/
+models/
+submissions/*.csv
+catboost_info/
+
+# Caches
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
