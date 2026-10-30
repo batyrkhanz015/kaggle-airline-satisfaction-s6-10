@@ -93,6 +93,9 @@ All rows use the same stratified 5-fold split (seed 42). OOF AUC is computed ove
 | 24 | 2026-10-30 | Run 19, grid of depth 6–9 × L2 {1, 3, 10} (12 fits on fold 0): depth 7, L2 3 | CatBoost (grid) | 0.96077 | 0.96078 ± 0.00060 | | yes by the rule, a tie in practice (+0.00001 vs 19, 4/5 folds; the fold-2 "win" is +0.000002) |
 | 25 | 2026-10-31 | Stack of runs 22, 23, 18, 24 (logistic regression on log-odds, nested CV; weights ≈ 1.4 / 0.8 / 0.3 / 0.5) | Blend | 0.96110 | 0.96112 ± 0.00054 | 0.96069 | **yes: best overall** (+0.00015 vs run 20, 5/5 folds; +0.00003 vs the simple average, 4/5); submission 03 |
 | 26 | 2026-10-31 | Run 22 + the 130k original rows (run 21's setup); rule set before the run: ≥ 4/5 folds and mean gain ≥ +0.00005 | LightGBM (Optuna) | 0.96107 | 0.96108 ± 0.00052 | | no: +0.00003 vs run 22, 4/5 folds, below the +0.00005 minimum (with run 16's settings it was +0.00007, so tuning made the rows *less* useful) |
+| 27 | 2026-10-31 | Run 22 + counts of rating patterns over train + test (keys: all 13 ratings, the 6 strongest, 13 + class + travel type) | LightGBM (Optuna) | 0.96095 | 0.96095 ± 0.00057 | | no: −0.00009 vs run 22, 0/5 folds |
+| 28 | 2026-10-31 | Run 22 + the original's satisfaction rate and count per rating pattern (same 3 keys) | LightGBM (Optuna) | 0.96094 | 0.96095 ± 0.00052 | | no: −0.00010 vs run 22, 0/5 folds |
+| 29 | 2026-10-31 | Run 22 + in-fold target encoding of the 3 rating patterns | LightGBM (Optuna) | 0.96094 | 0.96096 ± 0.00051 | | no: −0.00009 vs run 22, 0/5 folds; nothing kept, so the other models weren't retrained |
 
 Credits: value counts, distance digits, original-data features and pair target encoding were inspired by public notebooks, mainly [S6E10 LightGBM CV 5 folds 0.96111](https://www.kaggle.com/code/evgendvorkin/s6e10-lightgbm-cv-5-folds-0-96111).
 
