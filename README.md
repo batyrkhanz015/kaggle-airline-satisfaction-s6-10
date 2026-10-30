@@ -56,7 +56,7 @@ Following the 12-step ML Project Routine.
 - [ ] 6. Baseline end to end (CV baseline done, run 01; first submission not made yet)
 - [x] 7. Features and pipelines (notebook sections 6–8: tree features, chosen set = run 08; section 9: preprocessing for linear models)
 - [x] 8. Iterate on models (notebook sections 10–11: 12 algorithms on the same folds, blend of the 4 boosting models)
-- [ ] 9. Tune, finalize, submit (submitted 01 CatBoost: LB 0.96035 and 02 blend: LB 0.96051, both selected as finals on 30 Oct; section 14 tuned LightGBM, XGBoost and CatBoost, and the new files 03 stack (CV 0.96110) and 04 tuned LightGBM (CV 0.96104) aren't submitted yet)
+- [ ] 9. Tune, finalize, submit (submitted 01 CatBoost: LB 0.96035 and 02 blend: LB 0.96051, both selected as finals on 30 Oct; section 14 tuned LightGBM, XGBoost and CatBoost; submitted 03 stack: LB 0.96069 and 04 tuned LightGBM: LB 0.96063, the planned finals)
 - [ ] 10. Communicate results
 - [ ] 11. Deploy (not needed for Kaggle)
 - [ ] 12. Wrap up
@@ -88,10 +88,10 @@ All rows use the same stratified 5-fold split (seed 42). OOF AUC is computed ove
 | 19 | 2026-10-30 | Run-08 features + TE; depth 6, lr 0.08, one-hot cats ≤ 4 levels | CatBoost | 0.96076 | 0.96077 ± 0.00062 | 0.96035 | **yes: best single model** (+0.00035, 5/5 folds); submission 01 |
 | 20 | 2026-10-30 | Simple average of runs 16–19 (stacking checked with nested CV: equal weights, no gain from more models) | Blend | 0.96095 | 0.96096 ± 0.00058 | 0.96051 | **yes: best overall** (+0.00019 vs CatBoost, 5/5 folds); submission 02 |
 | 21 | 2026-10-30 | Run 16 + the 130k original rows in every training fold (`is_original` flag; their lookups and original-model probability computed out-of-fold within the original; TE fitted on synthetic rows only) | LightGBM (tuned) | 0.96081 | 0.96083 ± 0.00057 | | no: +0.00007 vs run 16, better in only 3/5 folds (rule: ≥ 4/5) |
-| 22 | 2026-10-30 | Run 16 tuned with Optuna (30 trials on fold 0): 89 leaves, min_child 13, L2 3.4, subsample 0.98, **colsample 0.31** | LightGBM (Optuna) | 0.96104 | 0.96104 ± 0.00053 | | **yes** (+0.00029 vs 16, 5/5 folds; +0.00026 on the untouched folds 1–4) |
+| 22 | 2026-10-30 | Run 16 tuned with Optuna (30 trials on fold 0): 89 leaves, min_child 13, L2 3.4, subsample 0.98, **colsample 0.31** | LightGBM (Optuna) | 0.96104 | 0.96104 ± 0.00053 | 0.96063 | **yes** (+0.00029 vs 16, 5/5 folds; +0.00026 on the untouched folds 1–4); submission 04 |
 | 23 | 2026-10-30 | Run 17 tuned with Optuna (30 trials on fold 0): depth 9, min_child_weight 0.63, L2 16, subsample 0.86, colsample 0.47 | XGBoost (Optuna) | 0.96082 | 0.96083 ± 0.00058 | | yes by the rule, but small (+0.00006 vs 17, 4/5 folds) |
 | 24 | 2026-10-30 | Run 19, grid of depth 6–9 × L2 {1, 3, 10} (12 fits on fold 0): depth 7, L2 3 | CatBoost (grid) | 0.96077 | 0.96078 ± 0.00060 | | yes by the rule, a tie in practice (+0.00001 vs 19, 4/5 folds; the fold-2 "win" is +0.000002) |
-| 25 | 2026-10-31 | Stack of runs 22, 23, 18, 24 (logistic regression on log-odds, nested CV; weights ≈ 1.4 / 0.8 / 0.3 / 0.5) | Blend | 0.96110 | 0.96112 ± 0.00054 | | **yes: best overall** (+0.00015 vs run 20, 5/5 folds; +0.00003 vs the simple average, 4/5); file 03 |
+| 25 | 2026-10-31 | Stack of runs 22, 23, 18, 24 (logistic regression on log-odds, nested CV; weights ≈ 1.4 / 0.8 / 0.3 / 0.5) | Blend | 0.96110 | 0.96112 ± 0.00054 | 0.96069 | **yes: best overall** (+0.00015 vs run 20, 5/5 folds; +0.00003 vs the simple average, 4/5); submission 03 |
 | 26 | 2026-10-31 | Run 22 + the 130k original rows (run 21's setup); rule set before the run: ≥ 4/5 folds and mean gain ≥ +0.00005 | LightGBM (Optuna) | 0.96107 | 0.96108 ± 0.00052 | | no: +0.00003 vs run 22, 4/5 folds, below the +0.00005 minimum (with run 16's settings it was +0.00007, so tuning made the rows *less* useful) |
 
 Credits: value counts, distance digits, original-data features and pair target encoding were inspired by public notebooks, mainly [S6E10 LightGBM CV 5 folds 0.96111](https://www.kaggle.com/code/evgendvorkin/s6e10-lightgbm-cv-5-folds-0-96111).
