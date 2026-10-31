@@ -99,6 +99,10 @@ All rows use the same stratified 5-fold split (seed 42). OOF AUC is computed ove
 | 30 | 2026-10-31 | Run 23 + all rating-pattern features (counts, original lookups, target encoding): does a feature that hurts LightGBM hurt the others? | XGBoost (Optuna) | 0.96078 | 0.96079 ± 0.00054 | | no: −0.00005 vs run 23, 2/5 folds |
 | 31 | 2026-10-31 | Run 18 + all rating-pattern features | HistGradientBoosting | 0.96065 | 0.96065 ± 0.00054 | | no: −0.00003 vs run 18, 2/5 folds |
 | 32 | 2026-10-31 | Run 24 + all rating-pattern features | CatBoost (grid) | 0.96069 | 0.96070 ± 0.00055 | | no: −0.00008 vs run 24, 1/5 folds. For information: a stack of runs 22, 30, 31, 32 scores 0.96115 (+0.000047 vs run 25, 4/5 folds), just below the minimum, so not used |
+| 33 | 2026-10-31 | Run 22 averaged over seeds 42, 43, 44 (same folds, features and settings) | LightGBM (Optuna, 3 seeds) | 0.96106 | 0.96107 ± 0.00054 | | no: +0.000025 vs run 22, 5/5 folds, below the minimum. Seeds 43 and 44 alone scored 0.96094, so seed 42 was a lucky seed |
+| 34 | 2026-10-31 | Run 23 averaged over seeds 42, 43, 44 | XGBoost (Optuna, 3 seeds) | 0.96096 | 0.96097 ± 0.00057 | | yes by the rule (+0.00014 vs run 23, 5/5 folds) |
+| 35 | 2026-10-31 | Run 24 averaged over seeds 42, 43, 44 | CatBoost (grid, 3 seeds) | 0.96087 | 0.96087 ± 0.00062 | | yes by the rule (+0.000095 vs run 24, 5/5 folds) |
+| 36 | 2026-10-31 | Stack of runs 33, 34, 18, 35 (nested CV, as run 25) | Blend | 0.96109 | 0.96110 ± 0.00055 | | no: −0.000014 vs run 25, 1/5 folds; rank correlation 0.999 with run 25. The stack had already averaged out most of the seed noise |
 
 Credits: value counts, distance digits, original-data features and pair target encoding were inspired by public notebooks, mainly [S6E10 LightGBM CV 5 folds 0.96111](https://www.kaggle.com/code/evgendvorkin/s6e10-lightgbm-cv-5-folds-0-96111).
 
