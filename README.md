@@ -53,11 +53,11 @@ Following the 12-step ML Project Routine.
 - [x] 3. Get the data (`data/`, verified: train 699,635 rows, test 299,844 rows, original 129,880 rows)
 - [x] 4. Split and choose validation (adversarial AUC train vs test 0.50, so stratified 5-fold CV; notebook section 3)
 - [x] 5. Explore the data (notebook sections 4–5)
-- [ ] 6. Baseline end to end (CV baseline done, run 01; first submission not made yet)
-- [x] 7. Features and pipelines (notebook sections 6–8: tree features, chosen set = run 08; section 9: preprocessing for linear models)
-- [x] 8. Iterate on models (notebook sections 10–11: 12 algorithms on the same folds, blend of the 4 boosting models)
-- [ ] 9. Tune, finalize, submit (submitted 01 CatBoost: LB 0.96035 and 02 blend: LB 0.96051, both selected as finals on 30 Oct; section 14 tuned LightGBM, XGBoost and CatBoost; submitted 03 stack: LB 0.96069 and 04 tuned LightGBM: LB 0.96063, the planned finals)
-- [ ] 10. Communicate results
+- [x] 6. Baseline end to end (CV baseline: run 01; first submissions on 30 Oct: 01 CatBoost, 02 blend)
+- [x] 7. Features and pipelines (notebook sections 6–8: tree features, chosen set = run 08; section 9: preprocessing for linear models; section 15: rating-pattern features, not kept)
+- [x] 8. Iterate on models (notebook sections 10–11: 12 algorithms on the same folds, blend of the 4 boosting models; section 13: the original rows as training data, not kept)
+- [ ] 9. Tune, finalize, submit (section 14: tuned LightGBM, XGBoost and CatBoost, new stack; section 16: seed averaging, not kept. Submitted 01: LB 0.96035, 02: LB 0.96051, 03 stack: LB 0.96069, 04 tuned LightGBM: LB 0.96063. To do: select 03 + 04 as the 2 finals on Kaggle before 31 Oct 23:59 UTC)
+- [x] 10. Communicate results (Results section below)
 - [ ] 11. Deploy (not needed for Kaggle)
 - [ ] 12. Wrap up
 
@@ -108,7 +108,62 @@ Credits: value counts, distance digits, original-data features and pair target e
 
 ## Results
 
-To be written at the end of the competition.
+### Final submissions
+
+Chosen by cross-validation, not by the public leaderboard: the best blend, plus a different, robust single model.
+
+| File | Model | CV AUC | Public LB | Private LB |
+|---|---|---|---|---|
+| `03-blend-tuned-stack.csv` | Stack (logistic regression on log-odds) of tuned LightGBM, XGBoost, CatBoost and HistGradientBoosting (run 25) | **0.96110** | **0.96069** | after the deadline |
+| `04-lightgbm-optuna.csv` | LightGBM tuned with Optuna (run 22) | 0.96104 | 0.96063 | after the deadline |
+
+On the public leaderboard on 30 Oct, 0.96069 ranked about 1,410 of 3,603 teams (top 39%). The top 10% started at 0.96212. The private leaderboard (the other 80% of the test set) is revealed after the deadline.
+
+**The CV could be trusted.** All four submissions ranked on the public leaderboard exactly as CV predicted (03 > 04 > 02 > 01). The public scores are ~0.0004 below CV because this particular 20% of the test set is slightly harder for every team: on random 60k-row subsets of our out-of-fold predictions, the AUC moves by ±0.0008.
+
+### How the score was built
+
+| Step | Run | CV AUC | Gain |
+|---|---|---|---|
+| LightGBM on the raw features | 01 | 0.95862 | |
+| + feature engineering: value counts, distance digits, original-data lookups, original-only model, in-fold target encoding | 08 | 0.96041 | +0.00179 |
+| + hand-tuned boosting (LightGBM learning rate 0.1 → 0.03) | 16 | 0.96075 | +0.00034 |
+| + average of 4 boosting models | 20 | 0.96095 | +0.00020 |
+| + Optuna tuning, stack instead of average | 25 | **0.96110** | +0.00015 |
+
+Feature engineering gave about 70% of the total gain.
+
+### What worked
+
+- **Features built from traces the synthetic-data generator left behind and from the original data:** counts of how often a value occurs (+0.00034), the digits of the flight distance (+0.00029), satisfaction rates looked up in the original 130k rows (+0.00052), a model trained on the original data alone (+0.00028), and in-fold target encoding (+0.00032).
+- **Gradient boosting.** Of 12 algorithms on the same folds, all 4 boosting models beat every other kind of model. Bagging was 0.001 behind, and linear models, KNN and naive Bayes 0.003–0.015 behind.
+- **Tuning LightGBM with Optuna** (+0.00029, 5/5 folds). The big lever was column sampling: each tree sees 31% of the columns instead of 80%, with a stronger L2 penalty.
+- **Blending:** the stack beat the best single model by +0.00006 to +0.0002.
+
+### What didn't work
+
+Every idea was tested with a rule set before the run: keep it only if it improves at least 4 of 5 folds (from run 26 on, also by at least +0.00005 on average).
+
+| Idea | Result |
+|---|---|
+| Domain features (rating averages, delay sums, segments) | −0.00019, 0/5 folds |
+| The 130k original rows as extra training data | +0.00007 (3/5); +0.00003 after tuning |
+| Rating-pattern features (two-thirds of passengers share an exact 13-rating pattern) | about −0.00009 for LightGBM, worse for every other model too |
+| Averaging 3 seeds per model | each model +0.00003 to +0.00014, but the stack unchanged |
+
+### Lessons
+
+1. **Trust CV over the public leaderboard,** and judge every change fold by fold on the same folds.
+2. **Set the decision rule before the run.** A tuned CatBoost passed "≥ 4/5 folds" with a fold "win" of +0.000002, which is why a minimum gain was added afterwards.
+3. **Beware the winner's curse.** Settings tuned on fold 0 with seed 42 looked better partly by luck. With seeds 43 and 44, the same LightGBM scored 0.0001 lower. Untouched folds and other seeds give the honest picture.
+4. **Unusual isn't the same as predictive.** The repeated rating patterns are a real trace of the generator, but they carry no information about satisfaction beyond the ratings themselves.
+5. **A blend needs different errors.** Better copies of the same kind of model (seed averaging) didn't improve the stack. The gap to the top of the leaderboard comes from different model families (neural networks, tabular foundation models) and large stacks of them, which were out of scope for this laptop.
+6. **8 GB is enough with discipline.** One model at a time on all cores, compact data types, and a RAM watchdog kept every run under 2.2 GB.
+
+### What I'd try next
+
+- A neural network (RealMLP) or a tabular foundation model (TabPFN, TabICL) on a Kaggle GPU, added to the stack.
+- CatBoost's column sampling (`rsm`), the counterpart of LightGBM's biggest win, which was never searched.
 
 ## Data and credits
 
