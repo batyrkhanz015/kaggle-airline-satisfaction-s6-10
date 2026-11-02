@@ -15,3 +15,6 @@ catboost_info/
 __pycache__/
 .ipynb_checkpoints/
 .DS_Store
+
+# Local instructions for Claude Code (kept on this machine, not published)
+CLAUDE.md
